@@ -1,16 +1,20 @@
-FROM centos:7
-ARG VERSION
-LABEL org.label-schema.schema-version=1.0.0-rc1 \
-  org.label-schema.name="rsyslog" \
-  org.label-schema.description="RSyslog container with pre-canned use-cases controlled by setting environment variables" \
-  org.label-schema.version="${VERSION}" \
-  org.label-schema.url="http://www.rsyslog.com" \
-  org.label-schema.vcs-url="https://github.com/JPvRiel/docker-rsyslog" \
-  org.label-schema.distribution-scope=public \
-  maintainer='Jean-Pierre van Riel <jp.vanriel@gmail.com>'
-# Base CentOS image has a nubmer of labels we don't overwrite and this may cause confusion
+FROM registry.access.redhat.com/rhel7.5
+
+LABEL version="0.1"
+
+LABEL description="Rsyslog 8.36.0 - RHEL 7.5 Container"
+
+ENV RSYSLOG_VERSION 8.36.0-3.el7.x86_64
 
 ENV container=docker
+
+RUN yum -y install lsof wget net-tools
+
+RUN rpm --import http://rpms.adiscon.com/RPM-GPG-KEY-Adiscon
+
+RUN cd /etc/yum.repos.d/;wget http://rpms.adiscon.com/v8-stable/rsyslog.repo
+
+RUN yum install rsyslog
 
 # Install confd
 ARG CONFD_VER='0.16.0'
