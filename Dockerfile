@@ -12,9 +12,9 @@ RUN yum -y install lsof wget net-tools
 
 RUN rpm --import http://rpms.adiscon.com/RPM-GPG-KEY-Adiscon
 
-RUN cd /etc/yum.repos.d/;wget http://rpms.adiscon.com/v8-stable/rsyslog.repo
+COPY rsyslog.repo /etc/yum.repos.d/
 
-RUN yum install rsyslog
+RUN yum -y install rsyslog
 
 # Install confd
 ARG CONFD_VER='0.16.0'
@@ -153,4 +153,15 @@ HEALTHCHECK CMD /usr/local/bin/rsyslog_healthcheck.sh
 
 # Add build-date at the end to avoid invalidating the docker build cache
 ARG BUILD_DATE
+
 LABEL org.label-schema.build-date="${BUILD_DATE}"
+
+RUN rm -rf /tmp/*
+
+RUN yum clean all 
+
+RUN rm -rf /var/cache/yum
+
+RUN sed -i 's/nullok//g' /etc/pam.d/system-auth
+
+COPY yum.conf /etc/yum.conf

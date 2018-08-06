@@ -1,0 +1,7 @@
+[rsyslog_v8]
+name=Adiscon 
+baseurl=http://rpms.adiscon.com/v8-stable/epel-7/x86_64/
+enabled=1
+gpgcheck=0
+gpgkey=http://rpms.adiscon.com/RPM-GPG-KEY-Adiscon
+protect=1
