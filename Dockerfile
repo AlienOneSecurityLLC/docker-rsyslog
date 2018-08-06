@@ -12,48 +12,6 @@ LABEL org.label-schema.schema-version=1.0.0-rc1 \
 
 ENV container=docker
 
-# Embed custom org CA into image if need be
-COPY etc/pki/ca-trust/source/anchors/* /etc/pki/ca-trust/source/anchors/
-RUN update-ca-trust
-
-# Setup repos, etc
-# Disable fast mirror plugin to better leverage upstream proxy caching (or use specific repos)
-# Switch yum config to use a consitant base url (useful if not caching docker build, but relying on an upstream proxy)
-ARG DISABLE_YUM_MIRROR=false
-RUN if [ "$DISABLE_YUM_MIRROR" != true ]; then exit; fi && \
-  sed 's/enabled=1/enabled=0/g' -i /etc/yum/pluginconf.d/fastestmirror.conf && \
-  sed 's/^mirrorlist/#mirrorlist/g' -i /etc/yum.repos.d/CentOS-Base.repo && \
-  sed 's/^#baseurl/baseurl/g' -i /etc/yum.repos.d/CentOS-Base.repo
-# Some rsyslog modules have dependancies in epel
-RUN yum --setopt=timeout=120 -y update && \
-  yum -y install --setopt=timeout=120 --setopt=tsflags=nodocs epel-release
-# Also switch to a base url for epel repo
-RUN if [ "$DISABLE_YUM_MIRROR" != true ]; then exit; fi && \
-  sed 's/^mirrorlist/#mirrorlist/g' -i /etc/yum.repos.d/epel.repo && \
-  sed 's/^#baseurl/baseurl/g' -i /etc/yum.repos.d/epel.repo
-
-# Install Rsyslog. For http://rpms.adiscon.com/v8-stable/rsyslog.repo
-# - It has gpgcheck=0
-# - Adiscon doens't offer an HTTPS endpoint for the above file :-/
-# - The GPG key is at http://rpms.adiscon.com/RPM-GPG-KEY-Adiscon, so also not secure to download and trust directly
-# Therefore, prebundle our own local copy of the repo and GPG file
-COPY etc/pki/rpm-gpg/RPM-GPG-KEY-Adiscon /etc/pki/rpm-gpg/RPM-GPG-KEY-Adiscon
-COPY etc/yum.repos.d/rsyslog.repo /etc/yum.repos.d/rsyslog.repo
-ARG RSYSLOG_VERSION='8.36.0'
-RUN yum --setopt=timeout=120 -y update && \
-  yum --setopt=timeout=120 --setopt=tsflags=nodocs -y install \
-  rsyslog-${RSYSLOG_VERSION} \
-  rsyslog-gnutls-${RSYSLOG_VERSION} \
-	adisconbuild-librdkafka1 \
-  rsyslog-kafka-${RSYSLOG_VERSION} \
-  rsyslog-relp-${RSYSLOG_VERSION} \
-  rsyslog-pmciscoios-${RSYSLOG_VERSION} \
-  rsyslog-mmjsonparse-${RSYSLOG_VERSION} \
-  lsof \
-  && yum clean all
-RUN rm -rf /etc/rsyslog.d/ \
-  && rm -f /etc/rsyslog.conf
-
 # Install confd
 ARG CONFD_VER='0.16.0'
 #ADD https://github.com/kelseyhightower/confd/releases/download/v${CONFD_VER}/confd-${CONFD_VER}-linux-amd64 /usr/local/bin/confd
